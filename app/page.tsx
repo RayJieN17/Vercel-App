@@ -4,16 +4,16 @@ import Link from 'next/link'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Welcome
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center px-4">
+      <div className="text-center text-white max-w-2xl">
+        <h1 className="text-6xl font-bold mb-6">
+          Welcome to Student Portal
         </h1>
-        <p className="text-gray-600 mb-8">
-          Get started with our platform
+        <p className="text-xl mb-10 opacity-90">
+          Your gateway to learning, collaboration, and success. Join our community today.
         </p>
         <Link href="/auth">
-          <button className="w-full bg-black text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-800 transition duration-300">
+          <button className="bg-white text-blue-600 font-semibold py-4 px-10 rounded-full hover:bg-gray-100 hover:scale-105 transition duration-300 shadow-lg">
             Get Started
           </button>
         </Link>
