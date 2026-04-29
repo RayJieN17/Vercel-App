@@ -19,9 +19,15 @@ export default function LandingPage() {
 
   async function fetchArticles() {
     const { data } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false })
+  .from("articles")
+  .select(`
+    *,
+    profiles (
+      username,
+      avatar_url
+    )
+  `)
+  .order("created_at", { ascending: false });
 
     setArticles(data || [])
   }

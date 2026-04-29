@@ -3,11 +3,17 @@
 import Link from 'next/link'
 import { useAuth } from '../contexts/authContext'
 import { Home } from 'lucide-react'
+import NotificationBell from "./NotificationBell";
+import { usePathname } from "next/navigation";
 
 export default function Navbar({ selectedTopic, setSelectedTopic, search,
   setSearch }: any) {
 
   const { signOut } = useAuth()
+
+  const pathname = usePathname();
+
+  const isProfilePage = pathname?.includes("/profile");
 
   return (
     <div className="border-b border-gray-800 p-4">
@@ -28,9 +34,7 @@ export default function Navbar({ selectedTopic, setSelectedTopic, search,
             className="bg-gray-900 border border-gray-700 px-4 py-2 rounded w-[500px]"
           />
 
-          <Link href="/notifications">
-            🔔
-          </Link>
+          <NotificationBell />
 
           <button
             onClick={signOut}

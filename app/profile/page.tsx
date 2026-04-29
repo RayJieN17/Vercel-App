@@ -1,79 +1,150 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/app/contexts/authContext'
-import { supabase } from '@/app/lib/supabase/client'
-import Navbar from '../components/navbar'
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase/client";
+import Navbar from "../components/navbar";
 
 export default function ProfilePage() {
-  const { user } = useAuth()
-
-  const [username, setUsername] = useState('')
-  const [bio, setBio] = useState('')
+  const [profile, setProfile] = useState<any>(null);
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
-    fetchProfile()
-  }, [])
+    loadProfile();
+  }, []);
 
-  async function fetchProfile() {
+  async function loadProfile() {
+    const { data: userData } =
+      await supabase.auth.getUser();
+
+    const user = userData?.user;
+
+    if (!user) return;
+
     const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user?.id)
-      .single()
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
 
-    if (data) {
-      setUsername(data.username || '')
-      setBio(data.bio || '')
-    }
+    setProfile(data);
+    setUsername(data?.username || "");
+    setBio(data?.bio || "");
+    setAvatar(data?.avatar_url || "");
+  }
+
+  async function uploadAvatar(e: any) {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const filePath = `${Date.now()}-${file.name}`;
+
+    const { error } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file);
+
+    if (error) return;
+
+    const { data } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filePath);
+
+    setAvatar(data.publicUrl);
   }
 
   async function saveProfile() {
-    await supabase.from('profiles').upsert({
-      id: user?.id,
-      username,
-      bio,
-    })
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
 
-    alert('Profile updated')
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        email: user.email,
+        username,
+        bio,
+        avatar_url: avatar,
+        updated_at: new Date(),
+      });
+
+    if (!error) {
+      alert("Profile saved!");
+    } else {
+      console.log(error);
+    }
   }
 
   return (
-
-    <main className="min-h-screen bg-black text-white">
-
+    <main className="min-h-screen bg-[#18191a] text-white">
+      {/* SAME NAVBAR AS ARTICLES */}
       <Navbar />
 
-      <div className="p-10">
+      {/* PAGE CONTENT */}
+      <div className="h-48 bg-gradient-to-r from-blue-600 to-purple-600"></div>
 
-        <h1 className="text-3xl font-bold mb-5">
-          Profile
-        </h1>
+      <div className="max-w-3xl mx-auto px-4 -mt-16">
+        {/* PROFILE CARD */}
+        <div className="bg-[#242526] p-6 rounded-2xl shadow-lg">
+          
+          {/* AVATAR */}
+          <div className="flex items-end gap-4">
+            <div className="relative">
+              <img
+                src={
+                  avatar ||
+                  "https://ui-avatars.com/api/?name=User"
+                }
+                className="w-24 h-24 rounded-full border-4 border-[#18191a]"
+              />
 
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          className="border border-gray-700 bg-gray-900 p-2 w-full mb-4 text-white rounded"
-        />
+              <input
+                type="file"
+                onChange={uploadAvatar}
+                className="absolute bottom-0 left-0 opacity-0 w-full h-full cursor-pointer"
+              />
+            </div>
 
-        <textarea
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          placeholder="Bio"
-          className="border border-gray-700 bg-gray-900 p-2 w-full mb-4 text-white rounded"
-        />
+            <div>
+              <h2 className="text-xl font-bold">
+                {username || "Username"}
+              </h2>
+              <p className="text-gray-400 text-sm">
+                {profile?.email}
+              </p>
+            </div>
+          </div>
 
-        <button
-          onClick={saveProfile}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Save
-        </button>
+          {/* EDIT FIELDS */}
+          <div className="mt-6 space-y-3">
+            <input
+              value={username}
+              onChange={(e) =>
+                setUsername(e.target.value)
+              }
+              placeholder="Username"
+              className="w-full bg-[#3a3b3c] px-4 py-2 rounded-lg outline-none"
+            />
 
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Bio..."
+              className="w-full bg-[#3a3b3c] px-4 py-2 rounded-lg outline-none"
+            />
+
+            <button
+              onClick={saveProfile}
+              className="bg-blue-600 px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Save Profile
+            </button>
+          </div>
+        </div>
       </div>
-
     </main>
-
-  )
+  );
 }

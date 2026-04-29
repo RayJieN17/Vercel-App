@@ -55,6 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // redirect after successful login
     if (!error) {
       router.push('/dashboard')
+      await supabase.from("notifications").insert({
+        user_email: email,
+
+        message: `Welcome back to the system 🎉`,
+      });
     }
 
     return { error }

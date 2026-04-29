@@ -1,154 +1,133 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/app/lib/supabase/client'
-import { useAuth } from '@/app/contexts/authContext'
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase/client";
 
 export default function CommentSection({
   articleId,
 }: {
-  articleId: number
+  articleId: number;
 }) {
-  const { user } = useAuth()
-
-  const [comment, setComment] = useState('')
-  const [comments, setComments] = useState<any[]>([])
-  const [replyText, setReplyText] = useState('')
-  const [replyingTo, setReplyingTo] = useState<number | null>(null)
+  const [comments, setComments] = useState<any[]>([]);
+  const [text, setText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
-    fetchComments()
-  }, [])
+    fetchComments();
+  }, []);
 
   async function fetchComments() {
     const { data } = await supabase
-      .from('comments')
-      .select('*')
-      .eq('article_id', articleId)
-      .order('created_at', { ascending: true })
+      .from("comments")
+      .select("*")
+      .eq("article_id", articleId)
+      .order("created_at", { ascending: true });
 
-    setComments(data || [])
+    setComments(data || []);
   }
 
-  async function addComment() {
-    if (!comment.trim()) return
+  async function addComment(parentId : number | null = null) {
+    const { data: userData } =
+      await supabase.auth.getUser();
 
-    await supabase.from('comments').insert({
+    const email = userData?.user?.email;
+
+    if (!email || !text.trim()) return;
+
+    await supabase.from("comments").insert({
       article_id: articleId,
-      user_id: user?.id,
-      content: comment,
-      parent_id: null,
-    })
-
-    const { data: article } = await supabase
-      .from('articles')
-      .select('user_id')
-      .eq('id', articleId)
-      .single()
-
-    if (article?.user_id) {
-      await supabase.from('notifications').insert({
-        user_id: article.user_id,
-        message: 'Someone commented on your article',
-      })
-    }
-
-    setComment('')
-    fetchComments()
-  }
-
-  async function addReply(parentId: number) {
-    if (!replyText.trim()) return
-
-    await supabase.from('comments').insert({
-      article_id: articleId,
-      user_id: user?.id,
-      content: replyText,
       parent_id: parentId,
-    })
+      user_email: email,
+      content: text,
+    });
 
-    setReplyText('')
-    setReplyingTo(null)
+    setText("");
+    setReplyingTo(null);
 
-    fetchComments()
+    fetchComments();
   }
 
-  const mainComments = comments.filter(
-    (comment) => comment.parent_id === null
-  )
+  const rootComments = comments.filter(
+    (c) => c.parent_id === null
+  );
 
-  const getReplies = (commentId: number) => {
+  function getReplies(parentId: number) {
     return comments.filter(
-      (comment) => comment.parent_id === commentId
-    )
+      (c) => c.parent_id === parentId
+    );
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">
-        Comments
-      </h2>
+    <div className="border-t border-[#2f3136] p-4">
+      {/* COMMENT INPUT */}
 
-      <div className="mb-6">
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Write a comment"
-          className="border w-full p-3 text-black"
+      <div className="flex gap-2 mb-4">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={
+            replyingTo
+              ? "Write a reply..."
+              : "Write a comment..."
+          }
+          className="flex-1 bg-[#2a2d31] text-white px-4 py-2 rounded-full outline-none"
         />
 
         <button
-          onClick={addComment}
-          className="bg-green-600 text-white px-4 py-2 mt-2 rounded"
+          onClick={() => addComment(replyingTo)}
+          className="bg-blue-600 hover:bg-blue-700 px-5 rounded-full"
         >
-          Comment
+          Post
         </button>
       </div>
 
-      {mainComments.map((item) => (
-        <div
-          key={item.id}
-          className="border p-4 mb-4 rounded"
-        >
-          <p>{item.content}</p>
+      {/* COMMENTS */}
 
-          <button
-            onClick={() => setReplyingTo(item.id)}
-            className="text-blue-500 mt-2"
-          >
-            Reply
-          </button>
+      <div className="space-y-4">
+        {rootComments.map((comment) => (
+          <div key={comment.id}>
+            <div className="bg-[#2a2d31] p-3 rounded-2xl">
+              <p className="text-xs text-gray-400">
+                {comment.user_email}
+              </p>
 
-          {replyingTo === item.id && (
-            <div className="mt-3">
-              <textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Write reply"
-                className="border w-full p-2 text-black"
-              />
+              <p className="text-white text-sm mt-1">
+                {comment.content}
+              </p>
 
               <button
-                onClick={() => addReply(item.id)}
-                className="bg-blue-500 text-white px-4 py-2 mt-2 rounded"
+                onClick={() =>
+                  setReplyingTo(comment.id)
+                }
+                className="text-xs text-blue-400 mt-2"
               >
-                Submit Reply
+                Reply
               </button>
             </div>
-          )}
 
-          <div className="ml-8 mt-4">
-            {getReplies(item.id).map((reply) => (
-              <div
-                key={reply.id}
-                className="border-l-4 pl-4 mb-3"
-              >
-                <p>{reply.content}</p>
-              </div>
-            ))}
+            {/* REPLIES */}
+
+            <div className="ml-10 mt-2 space-y-2">
+              {getReplies(comment.id).map((reply) => (
+                <div
+                  key={reply.id}
+                  className="bg-[#3a3d42] p-3 rounded-2xl"
+                >
+                  <p className="text-xs text-gray-400">
+                    {reply.user_email}
+                  </p>
+
+                  <p className="text-white text-sm mt-1">
+                    {reply.content}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  )
+  );
 }
