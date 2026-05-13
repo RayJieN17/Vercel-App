@@ -15,24 +15,35 @@ export default function CreatePostModal({
 }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!open) return null;
 
   async function handleSubmit() {
     setLoading(true);
+    setErrorMsg(null);
 
     const { data: userData } = await supabase.auth.getUser();
     const email = userData?.user?.email;
 
     if (!email || !content.trim()) {
+      setErrorMsg("Missing email or content");
       setLoading(false);
       return;
     }
 
-    await supabase.from("articles").insert({
+    const { data, error } = await supabase.from("articles").insert({
       content,
       user_email: email,
     });
+
+    console.log("INSERT RESULT:", { data, error });
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+      return;
+    }
 
     setContent("");
     setLoading(false);
@@ -44,7 +55,7 @@ export default function CreatePostModal({
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-[#1c1e21] w-full max-w-lg rounded-2xl p-4 relative">
-        
+
         {/* CLOSE */}
         <button
           onClick={onClose}
@@ -57,6 +68,13 @@ export default function CreatePostModal({
         <h2 className="text-white text-lg font-bold mb-4">
           Create Post
         </h2>
+
+        {/* ERROR MESSAGE */}
+        {errorMsg && (
+          <div className="mb-3 text-red-400 text-sm">
+            {errorMsg}
+          </div>
+        )}
 
         {/* TEXT AREA */}
         <textarea

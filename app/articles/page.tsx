@@ -20,21 +20,25 @@ export default function ArticlesPage() {
   }, [])
 
   async function fetchArticles() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('articles')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    setArticles(data || [])
+    if (error) {
+      console.log("FETCH ERROR:", error.message);
+    }
+
+    setArticles(data || []);
   }
 
   const filteredArticles = articles
     .filter((article) => {
       if (selectedTopic === 'All') return true
-      return article.topic === selectedTopic
+      return !article.topic || article.topic === selectedTopic
     })
     .filter((article) => {
-      return article.title
+      return article.content
         ?.toLowerCase()
         .includes(search.toLowerCase())
     })
