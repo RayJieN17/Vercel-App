@@ -38,9 +38,9 @@ export default function CommentSection({
 
     await supabase.from("comments").insert({
       article_id: articleId,
-      parent_id: parentId,
       user_email: email,
       content: text,
+      parent_id: null,
     });
 
     setText("");

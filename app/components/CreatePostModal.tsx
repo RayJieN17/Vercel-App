@@ -14,7 +14,6 @@ export default function CreatePostModal({
   onPostCreated: () => void;
 }) {
   const [content, setContent] = useState("");
-  const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   if (!open) return null;
@@ -30,32 +29,12 @@ export default function CreatePostModal({
       return;
     }
 
-    let imageUrl = null;
-
-    if (image) {
-      const fileName = `${Date.now()}-${image.name}`;
-
-      const { data } = await supabase.storage
-        .from("posts")
-        .upload(fileName, image);
-
-      if (data) {
-        const { data: publicUrl } = supabase.storage
-          .from("posts")
-          .getPublicUrl(fileName);
-
-        imageUrl = publicUrl.publicUrl;
-      }
-    }
-
     await supabase.from("articles").insert({
       content,
-      image_url: imageUrl,
       user_email: email,
     });
 
     setContent("");
-    setImage(null);
     setLoading(false);
 
     onPostCreated();
@@ -85,15 +64,6 @@ export default function CreatePostModal({
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's on your mind?"
           className="w-full bg-[#2a2d31] text-white p-3 rounded-xl outline-none h-32"
-        />
-
-        {/* IMAGE INPUT */}
-        <input
-          type="file"
-          onChange={(e) =>
-            setImage(e.target.files?.[0] || null)
-          }
-          className="mt-3 text-white"
         />
 
         {/* ACTIONS */}

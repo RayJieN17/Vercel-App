@@ -39,27 +39,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-    return { error }
-  }
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      return { error }
+    }
 
-  const signIn = async (email: string, password: string) => {
+    const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    // redirect after successful login
     if (!error) {
       router.push('/dashboard')
-      await supabase.from("notifications").insert({
-        user_email: email,
 
-        message: `Welcome back to the system 🎉`,
-      });
+      const { error: notifError } = await supabase
+        .from("notifications")
+        .insert({
+          user_email: email,
+          message: "Welcome back to the system 🎉",
+        })
+
+      if (notifError) {
+        console.error("Notification insert failed:", notifError.message)
+      }
     }
 
     return { error }

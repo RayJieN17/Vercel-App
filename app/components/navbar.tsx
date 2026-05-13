@@ -21,7 +21,7 @@ export default function Navbar({ selectedTopic, setSelectedTopic, search,
       <div className="flex items-center justify-between">
 
         <h1 className="text-2xl font-bold">
-          Student Portal
+          Brgy. Tibay Chismiss
         </h1>
 
         <div className="flex items-center gap-4">
